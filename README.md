@@ -57,6 +57,11 @@ Also if you find errors in the workshop material all of our labs are on Github. 
   - Slides - [Predictive Analytics and Data Modeling](./presentations/Predictive-Analytics-webinar.pdf)
   - Lab - [Exercises in Jupyter Lab](https://github.com/SSG-DRD-IOT/lab-predictive-analytics)
 
+
+* **Restricted Zone Notifier using Intel® Edge Insights Software**
+    - Lab - [Restricted Zone Notifier using Intel® Edge Insights Software](./restricted_zone_notifier_lab.md)
+
+
 * **Feedback, Survey and Conclusion**
 
 ## Hardware Used in this Workshop
