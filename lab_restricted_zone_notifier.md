@@ -1,6 +1,6 @@
 ## Deploying Restricted Zone Notifier using Intel® Edge Insights Software framework
 ### Lab Overview
-In our previous Lab, we successfully ran the pcbdemo application using the Intel® Edge Insights Framework. Now, we will deploy a Restricted zone notifier reference implementation using Intel® Edge Insights Framework.
+In our previous Lab, we have successfully ran the pcbdemo application using the Intel® Edge Insights Framework. Now, we will deploy a Restricted zone notifier reference implementation using Intel® Edge Insights Framework.
 
 ### Steps to Complete this lab:
 - Create custom trigger that will send frames to the classifier when a person is detected in frame.
@@ -457,7 +457,7 @@ The Myriad™ Inference Engine plugin supports VPU devices such as the Intel® N
   ```JSON
 "model_xml": "./algos/algo_config/restricted_zone_notifier/person-detection-retail-0013.xml",
 "model_bin": "./algos/algo_config/restricted_zone_notifier/person-detection-retail-0013.bin",
-"device": "CPU"
+"device": "GPU"
 ```
 
 - with below lines of codes in **restricted_zone_notifier.json** file.
