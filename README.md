@@ -59,7 +59,7 @@ Also if you find errors in the workshop material all of our labs are on Github. 
 
 
 * **Restricted Zone Notifier using Intel® Edge Insights Software**
-    - Lab - [Restricted Zone Notifier using Intel® Edge Insights Software](./restricted_zone_notifier_lab.md)
+    - Lab - [Restricted Zone Notifier using Intel® Edge Insights Software](./restricted_zone_notifier.md)
 
 
 * **Feedback, Survey and Conclusion**

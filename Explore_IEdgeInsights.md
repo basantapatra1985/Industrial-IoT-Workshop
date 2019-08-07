@@ -4,10 +4,10 @@ Industrial Edge Insights Software (EIS) from Intel is a scalable solution for th
 ### How Industrial Edge Insights Software Works
 To understand how it works, let's first understand key components of this software.
 
-**Configuration File (factory.json)**   
+**Configuration File (factory_pcbdemo.json)**   
 This file is the main configuration file for the entire work stream. It uses a standard JSON format. Using this file, a user can define the data ingestion, storage, triggers, and classifiers.
 
-*Location:*~/IEdgeInsights/docker_setup/config/factory.json
+*Location:*~/IEdgeInsights/docker_setup/config/factory_pcbdemo.json
 
 **Video Ingestion**   
 The Video Ingestion module in the EIS is a user defined function, which uses the Data Ingestion library to ingest data to InfluxDB and Image store
@@ -95,21 +95,21 @@ The raw image frame is returned in response to the GetBlob() command.
 
 ### Running Defect detection demo application                            
 **Description**   
-Printed Circuits Boards(PCBs) are being inspected for quality control to check if any defects(missing component or components are short) are there with the PCBs. To find out the defects a Good quality PCB will be compared against the defective ones and pin point the location of the defect as well.
+Printed Circuits Boards(PCBs) are being inspected for quality control to check if any defects(missing component or components are short) are there with the PCBs. To find out the defects a good quality PCB will be compared against the defective ones and pin point the location of the defect as well.
 
 Input to the application can be from a live stream or from a video file. Here video file (~/IEdgeinsights/docker_setup/test_videos/pcb_d2000.avi) is used for this demo.
 
 **Build and Run Sample.**  
 To **build** the sample pcbdemo sample application execute the following commands.
 
-```
+```bash
 cd ~/IEdgeinsights/tools/visualizer/
 sudo make build
 ```
 
 To **run** the sample application , execute the below command:
 
-```
+```bash
 sudo make run CERT_PATH=${iei_install_dir}/cert-tool/Certificates/ HOST=localhost IMAGE_DIR=/opt/intel/iei/saved_images DISPLAY_IMG=true
 ```
 **Pcb-Demo Output**   

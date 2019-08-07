@@ -1,6 +1,6 @@
 ## Deploying Restricted Zone Notifier using Intel® Edge Insights Software framework
 ### Lab Overview
-In our previous Lab, we have successfully ran the pcbdemo application using the Intel® Edge Insights Framework. Now, we will deploy a Restricted zone notifier reference implementation using Intel® Edge Insights Framework.
+In our previous Lab, we successfully ran the pcbdemo application using the Intel® Edge Insights Framework. Now, we will deploy a Restricted zone notifier reference implementation using Intel® Edge Insights Framework.
 
 ### Steps to Complete this lab:
 - Create custom trigger that will send frames to the classifier when a person is detected in frame.
@@ -17,7 +17,7 @@ The purpose of trigger algorithm is to select frames of interest from the camera
 - To create trigger a custom trigger go to ***~/IEdgeinsights/algo/dpm/triggers/*** and create a file with name restricted_zone_notifier_trigger.py
 - Enter the following commands in terminal to complete this.
 
-  ```
+    ```bash
   cd ~/IEdgeinsights/algo/dpm/triggers/
   sudo gedit restricted_zone_notifier_trigger.py
   ```
@@ -68,6 +68,7 @@ The purpose of trigger algorithm is to select frames of interest from the camera
                 self.startSignal = False
             self.log.info("Sending frame")
             self.send_data(data, 1)
+```            
 
 
 
@@ -75,16 +76,16 @@ The purpose of trigger algorithm is to select frames of interest from the camera
 
 The purpose of classifier algorithm is to load the frame from the trigger into the SSD model to detect location of people and a secondary algorithm that detects if people are inside the restricted zone. If people are detected in the restricted zone a warning should be sent to the output frame and a warning should be sent over OPC/UA to the operator.
 
-- To create trigger a custom classifier go to ***~/IEdgeinsights/algo/dpm/classification/classifer  
+- To create trigger a custom classifier go to **~/IEdgeinsights/algo/dpm/classification/classifier**  
 - Create a folder with name  **"restrictedzonenotifier"** and create a file with name ```__init__.py```
 - Enter the following commands in terminal to complete this.
 
   ```bash
-cd ~/IEdgeinsights/algo/dpm/classification/classifer/
+cd ~/IEdgeinsights/algo/dpm/classification/classifier/
 mkdir restrictedzonenotifier && cd restrictedzonenotifier
 sudo gedit __init__.py
 ```
-- Copy the below classifier code snippet to ```__init__.py``` that newly created.
+- Copy the below classifier code snippet to the newly created ```__init__.py```.
 
   ```python
 import os
@@ -284,8 +285,8 @@ In this section we will create a custom JSON  configuration file to integrate th
   sudo gedit restricted_zone_notifier.json
 
   ```
+  - Copy the below configuration details to **restricted_zone_notifier.json**
 
-- Copy the below configuration details to **restricted_zone_notifier.json**
   ```JSON
   {
     "machine_id": "tool_2",
@@ -328,75 +329,97 @@ In this section we will create a custom JSON  configuration file to integrate th
 }
   ```
 
+To integrate the developed restricted zone notifier demo, following files to be updated with restricted_zone_notifier.json file:
+
+- IEdgeinsights/docker_setup/.env
+- IEdgeinsights/VideoIngestion/VideoIngestion.py
+- IEdgeinsights/DataAnalytics/PointDataAnalytics/classifer_setup.py
+
+#### Update the environment
+- To complete this, run the following commands in the terminal
+
+  ```bash
+cd  ~/IEdgeinsights/docker_setup
+sudo gedit .env
+  ```
+- Find and replace the name of the configuration file ```factory_pcbdemo.json ``` with ```restricted_zone_notifier.json``` .
+
+#### Update VideoIngestion module
+- To complete this, run the following commands in the terminal
+
+  ```bash
+cd  ~/IEdgeinsights/VideoIngestion
+sudo gedit VideoIngestion.py
+```
+- Find and replace the name of the configuration file ```factory_pcbdemo.json ``` with ```restricted_zone_notifier.json``` .
 
 
+#### Update classifier setup
+- To complete this, run the following commands in the terminal
 
+  ```bash
+cd ~/IEdgeinsights/DataAnalytics/PointDataAnalytics
+sudo gedit classifier_setup.py
+```
+- Find and replace the name of the configuration file ```factory_pcbdemo.json ``` with ```restricted_zone_notifier.json``` .
 
 
 ## Step-4: Customize visualizer application
 
-For visualizing the results of the video analytics, the a visualizer app is available in the repository. This is a sample app which uses the OPC-UA client for receiving the analytics results and the GRPC client for receiving the image frames and do a simple visualization.
-To customize the visualizer application(visualizer.py) navigate to the path **~/IEdgeinsights/tools/visualizer/**.
-- Run the following command:
-```
+For visualizing the results of the video analytics, the a visualizer app is available with the IEdgeInsights software framework. This is a sample app which uses the OPC-UA client for receiving the analytics results and the GRPC client for receiving the image frames and do a simple visualization.
+
+To customize the visualizer application(visualizer.py) modify the **config .json** file available in  **~/IEdgeinsights/tools/visualizer/** path.
+
+- To complete this task run the following commands to complete this task
+```bash
 cd ~/IEdgeinsights/tools/visualizer
-sudo gedit visualizer.py
+sudo gedit config.json
 ```
-In this section, we will be working with TODOs for visualizer.
+and replace the contents of the config.json with the below configuration details to view the result in a single window
 
-
-###
-Next,
-- Replace #TODO: Custom custom classifer 2
-- Paste the following lines
-
-```python
-
-```
-###
-Next,
-- Replace #TODO: Custom Custom classifer 3
-- Paste the following lines
-
-```python
-
+  ```JSON
+{
+  "output_streams": [
+    "stream1_results"
+  ]
+}
 ```
 
+### Step-5 : Build and Run the Application
+Run the following commands to build and run the customized restricted zone notifier apllication using EIS.
 
-Follow below steps to generate certificates, provision and build/start IEI.
-#### Generation of certificates:
+#### Generate certificates:
 - Run the following commands
 
-```
+  ```bash
 cd ~/IEdgeinsights/cert-tool
 python3 main.py
 ```
 
-![](images/certificate_generation.png)
 #### Provision the secrets to Vault:
 This will take the inputs from [docker_setup/config/provision_config.json](docker_setup/config/provision_config.json) & read the cert-tool generated Certificates and save it securely by storing it in the Hashicorp Vault.
 - Run the following commands
 
-```
+  ```bash
 cd ~/IEdgeinsights/docker_setup/
 sudo make provision CERT_PATH=../cert-tool/Certificates/
 sudo make install CERT_PATH=../cert-tool/Certificates/
-```
+  ```
 
-### Step-5 : Build and Run the Application
+#### IEI visualizer setup
 
-Run the following commands to build and run the customized restricted zone notifier apllication using EIS.
+- Run the following commands to run the customized restricted zone notifier apllication using EIS.
 
-```
+  ```bash
 sudo make distlibs
 cd ~/IEdgeinsights/tools/visualizer
 sudo make build
 sudo make run CERT_PATH=~/IEdgeinsights/cert-tool/Certificates/ HOST=localhost IMAGE_DIR=/opt/intel/iei/saved_images DISPLAY_IMG=true
-```
+  ```
 
  On successful execution, the application sends a warning message when a person is detected in the restricted zone. The output looks like below screenshot.
 
-![](images/restricted_zone_notifier_result.png)
+ ![](images/restricted_zone_notifier_result.png)
 
 ## Step-6 : Running the application on different Intel Accelerators
 Now, we will explore ways of improving performance by running the same code on various Intel's Accelerators such as GPUs and Intel® Myriad™-VPUs.
@@ -404,16 +427,16 @@ Now, we will explore ways of improving performance by running the same code on v
 The Restricted zone notifier application can be run on different hardwares by customizing the configuration JSON file (restricted_zone_notifier.json).
 
 ### Run application with CPU first
-To Run on CPU, execute the following commands:
+- To Run on CPU, execute the following commands:
 
-```
+  ```bash
 cd ~/IEdgeinsights/docker_setup/config/alog_config/
 sudo gedit restricted_zone_notifier.json
- ```
+  ```
 - Change the device to CPU ```device=CPU``` inside JSON file
 - Repeat the **Step-5** to build and run the application and observe the performance.
 
-***Note***-The Restricted Zone Notifier application runs on CPU by default.
+  ***NOTE***-The Restricted Zone Notifier application runs on CPU by default.
 
 
 ### Now, do inference with GPU
@@ -423,7 +446,7 @@ sudo gedit restricted_zone_notifier.json
 ### Next, inference with Myriad™ VPU
 The Myriad™ Inference Engine plugin supports VPU devices such as the Intel® Neural Compute Stick.
 
-- To run with on an Intel® GPU, change from ```"device":GPU``` to ```"device":MYRIAD```.
+- To run on an Intel® Myriad VPU, change from ```"device":GPU``` to ```"device":MYRIAD```.
 
 - VPU devices only support FP16 data type. So we need to use the FP16 variant of our pre-trained person detection model. The pre-trained models are available in the following path.
   ```
@@ -431,7 +454,7 @@ The Myriad™ Inference Engine plugin supports VPU devices such as the Intel® N
   ```
 - To complete this steps, replace the following lines of code:
 
-  ```
+  ```JSON
 "model_xml": "./algos/algo_config/restricted_zone_notifier/person-detection-retail-0013.xml",
 "model_bin": "./algos/algo_config/restricted_zone_notifier/person-detection-retail-0013.bin",
 "device": "CPU"
@@ -439,7 +462,7 @@ The Myriad™ Inference Engine plugin supports VPU devices such as the Intel® N
 
 - with below lines of codes in **restricted_zone_notifier.json** file.
 
-  ```
+  ```JSON
 "model_xml": "./algos/algo_config/restricted_zone_notifier/person-detection-retail-0013-fp16.xml",
 "model_bin": "./algos/algo_config/restricted_zone_notifier/person-detection-retail-0013-fp16.bin",
 "device": "MYRIAD"
