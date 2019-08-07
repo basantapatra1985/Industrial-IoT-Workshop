@@ -68,7 +68,7 @@ The purpose of trigger algorithm is to select frames of interest from the camera
                 self.startSignal = False
             self.log.info("Sending frame")
             self.send_data(data, 1)
-```            
+``` 
 
 
 
