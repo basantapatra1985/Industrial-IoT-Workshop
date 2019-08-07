@@ -68,7 +68,7 @@ The purpose of trigger algorithm is to select frames of interest from the camera
                 self.startSignal = False
             self.log.info("Sending frame")
             self.send_data(data, 1)
-``` 
+    ```
 
 
 
@@ -81,195 +81,195 @@ The purpose of classifier algorithm is to load the frame from the trigger into t
 - Enter the following commands in terminal to complete this.
 
   ```bash
-cd ~/IEdgeinsights/algo/dpm/classification/classifier/
-mkdir restrictedzonenotifier && cd restrictedzonenotifier
-sudo gedit __init__.py
-```
+    cd ~/IEdgeinsights/algo/dpm/classification/classifier/
+    mkdir restrictedzonenotifier && cd restrictedzonenotifier
+    sudo gedit __init__.py
+    ```
 - Copy the below classifier code snippet to the newly created ```__init__.py```.
 
-  ```python
-import os
-import sys
-import logging
-import cv2
-import time
-import numpy as np
-import json
-from collections import namedtuple
-from algos.dpm.defect import Defect
-from algos.dpm.display_info import DisplayInfo
-from openvino.inference_engine import IENetwork, IEPlugin
-MyStruct = namedtuple("assemblyinfo", "safe")
-INFO = MyStruct(True)
-PERSON_DETECTED = 1
-class Classifier:
+    ```python
+    import os
+    import sys
+    import logging
+    import cv2
+    import time
+    import numpy as np
+    import json
+    from collections import namedtuple
+    from algos.dpm.defect import Defect
+    from algos.dpm.display_info import DisplayInfo
+    from openvino.inference_engine import IENetwork, IEPlugin
+    MyStruct = namedtuple("assemblyinfo", "safe")
+    INFO = MyStruct(True)
+    PERSON_DETECTED = 1
+    class Classifier:
 
-    def __init__(self, model_xml, model_bin, device):
-        """Constructor
-        Parameters
-        ----------
-        model_xml      : TF model xml file
-        model_bin      : TF model bin file
-        device         : Run time device [CPU/GPU/MYRIAD]
-            Classifier configuration
-        """
+        def __init__(self, model_xml, model_bin, device):
+            """Constructor
+            Parameters
+            ----------
+            model_xml      : TF model xml file
+            model_bin      : TF model bin file
+            device         : Run time device [CPU/GPU/MYRIAD]
+                Classifier configuration
+            """
 
-        self.log = logging.getLogger('PEOPLE_DETECTION')
+            self.log = logging.getLogger('PEOPLE_DETECTION')
 
-        # Assert all input parameters exist
-        assert os.path.exists(model_xml), \
-            'Tensorflow model missing: {}'.format(model_xml)
-        assert os.path.exists(model_bin), \
-            'Tensorflow model bin file missing: {}'.format(model_bin)
+            # Assert all input parameters exist
+            assert os.path.exists(model_xml), \
+                'Tensorflow model missing: {}'.format(model_xml)
+            assert os.path.exists(model_bin), \
+                'Tensorflow model bin file missing: {}'.format(model_bin)
 
-        # Load OpenVINO model
-        #loading plugin for CPU
-        self.plugin = IEPlugin(device=device.upper(), plugin_dirs="")
+            # Load OpenVINO model
+            #loading plugin for CPU
+            self.plugin = IEPlugin(device=device.upper(), plugin_dirs="")
 
-        if 'CPU' in device:
-            self.plugin.add_cpu_extension("/opt/intel/openvino/inference_engine/lib/intel64/libcpu_extension_sse4.so")
+            if 'CPU' in device:
+                self.plugin.add_cpu_extension("/opt/intel/openvino/inference_engine/lib/intel64/libcpu_extension_sse4.so")
 
-        self.net = IENetwork(model=model_xml, weights=model_bin)
+            self.net = IENetwork(model=model_xml, weights=model_bin)
 
-        if device.upper() == "CPU":
-            supported_layers = self.plugin.get_supported_layers(self.net)
-            not_supported_layers = [l for l in self.net.layers.keys() if l not
-                                    in supported_layers]
-            if len(not_supported_layers) != 0:
-                self.log.debug('ERROR: Following layers are not supported by \
-                                the plugin for specified device {}:\n \
-                                {}'.format(self.plugin.device,
-                                           ', '.join(not_supported_layers)))
+            if device.upper() == "CPU":
+                supported_layers = self.plugin.get_supported_layers(self.net)
+                not_supported_layers = [l for l in self.net.layers.keys() if l not
+                                        in supported_layers]
+                if len(not_supported_layers) != 0:
+                    self.log.debug('ERROR: Following layers are not supported by \
+                                    the plugin for specified device {}:\n \
+                                    {}'.format(self.plugin.device,
+                                               ', '.join(not_supported_layers)))
 
-        assert len(self.net.inputs.keys()) == 1, \
-            'Sample supports only single input topologies'
-        assert len(self.net.outputs) == 1, \
-            'Sample supports only single output topologies'
+            assert len(self.net.inputs.keys()) == 1, \
+                'Sample supports only single input topologies'
+            assert len(self.net.outputs) == 1, \
+                'Sample supports only single output topologies'
 
-        self.input_blob = next(iter(self.net.inputs))
-        self.output_blob = next(iter(self.net.outputs))
-        self.net.batch_size = 1  # change to enable batch loading
-        self.exec_net = self.plugin.load(network=self.net)
+            self.input_blob = next(iter(self.net.inputs))
+            self.output_blob = next(iter(self.net.outputs))
+            self.net.batch_size = 1  # change to enable batch loading
+            self.exec_net = self.plugin.load(network=self.net)
 
-    def ssd_out(self,res, initial_wh, selected_region):
-        """
-        Parse SSD output.
+        def ssd_out(self,res, initial_wh, selected_region):
+            """
+            Parse SSD output.
 
-        :param res: Detection results
-        :param args: Parsed arguments
-        :param initial_wh: Initial width and height of the frame
-        :param selected_region: Selected region coordinates
-        :return: safe,person  
-        """
-        global INFO
-        person = []
-        INFO = INFO._replace(safe=True)
+            :param res: Detection results
+            :param args: Parsed arguments
+            :param initial_wh: Initial width and height of the frame
+            :param selected_region: Selected region coordinates
+            :return: safe,person  
+            """
+            global INFO
+            person = []
+            INFO = INFO._replace(safe=True)
 
-        for obj in res[0][0]:
-            # Draw objects only when probability is more than specified threshold
-            if obj[2] > 0.5:
-                xmin = int(obj[3] * initial_wh[0])
-                ymin = int(obj[4] * initial_wh[1])
-                xmax = int(obj[5] * initial_wh[0])
-                ymax = int(obj[6] * initial_wh[1])
-                person.append([xmin, ymin, xmax, ymax])
+            for obj in res[0][0]:
+                # Draw objects only when probability is more than specified threshold
+                if obj[2] > 0.5:
+                    xmin = int(obj[3] * initial_wh[0])
+                    ymin = int(obj[4] * initial_wh[1])
+                    xmax = int(obj[5] * initial_wh[0])
+                    ymax = int(obj[6] * initial_wh[1])
+                    person.append([xmin, ymin, xmax, ymax])
 
-        for p in person:
-            # area_of_person gives area of the detected person
-            area_of_person = (p[2] - p[0]) * (p[3] - p[1])
-            x_max = max(p[0], selected_region[0])
-            x_min = min(p[2], selected_region[0] + selected_region[2])
-            y_min = min(p[3], selected_region[1] + selected_region[3])
-            y_max = max(p[1], selected_region[1])
-            point_x = x_min - x_max
-            point_y = y_min - y_max
-            # area_of_intersection gives area of intersection of the
-            # detected person and the selected area
-            area_of_intersection = point_x * point_y
-            if point_x < 0 or point_y < 0:
-                continue
-            else:
-                if area_of_person > area_of_intersection:
-                    # assembly line area flags
-                    INFO = INFO._replace(safe=True)
+            for p in person:
+                # area_of_person gives area of the detected person
+                area_of_person = (p[2] - p[0]) * (p[3] - p[1])
+                x_max = max(p[0], selected_region[0])
+                x_min = min(p[2], selected_region[0] + selected_region[2])
+                y_min = min(p[3], selected_region[1] + selected_region[3])
+                y_max = max(p[1], selected_region[1])
+                point_x = x_min - x_max
+                point_y = y_min - y_max
+                # area_of_intersection gives area of intersection of the
+                # detected person and the selected area
+                area_of_intersection = point_x * point_y
+                if point_x < 0 or point_y < 0:
+                    continue
                 else:
-                    # assembly line area flags
-                    INFO = INFO._replace(safe=False)
-        return INFO.safe,person
+                    if area_of_person > area_of_intersection:
+                        # assembly line area flags
+                        INFO = INFO._replace(safe=True)
+                    else:
+                        # assembly line area flags
+                        INFO = INFO._replace(safe=False)
+            return INFO.safe,person
 
-    def classify(self, frame_num, img, user_data):
-        """Classify the given image.
+        def classify(self, frame_num, img, user_data):
+            """Classify the given image.
 
-        Parameters
-        ----------
-        frame_num : int
-            Frame count since the start signal was received from the trigger
-        img : NumPy Array
-            Image to classify
-        user_data : Object
-            Extra data passed forward from the trigger
+            Parameters
+            ----------
+            frame_num : int
+                Frame count since the start signal was received from the trigger
+            img : NumPy Array
+                Image to classify
+            user_data : Object
+                Extra data passed forward from the trigger
 
-        Returns
-        -------
-            Returns dissplay info and detected coordinates
-        """
-        self.log.info('Classify')
-        d_info = []
-        p_detect = []
-        frame_count=+1
+            Returns
+            -------
+                Returns dissplay info and detected coordinates
+            """
+            self.log.info('Classify')
+            d_info = []
+            p_detect = []
+            frame_count=+1
 
-        initial_wh = [img.shape[1], img.shape[0]]
-        n,c,h,w =  self.net.inputs[self.input_blob].shape
+            initial_wh = [img.shape[1], img.shape[0]]
+            n,c,h,w =  self.net.inputs[self.input_blob].shape
 
-        roi_x,roi_y, roi_w,roi_h = [0,0,0,0]
+            roi_x,roi_y, roi_w,roi_h = [0,0,0,0]
 
-        if roi_x <= 0 or roi_y <= 0:
-           roi_x = 0
-           roi_y = 0
-        if roi_w <= 0:
-            roi_w = img.shape[1]
-        if roi_h <= 0:
-             roi_h = img.shape[0]
+            if roi_x <= 0 or roi_y <= 0:
+               roi_x = 0
+               roi_y = 0
+            if roi_w <= 0:
+                roi_w = img.shape[1]
+            if roi_h <= 0:
+                 roi_h = img.shape[0]
 
-        cv2.rectangle(img, (roi_x, roi_y),
-                      (roi_x + roi_w, roi_y + roi_h), (0, 0, 255), 2)
-        selected_region = [roi_x, roi_y, roi_w, roi_h]
+            cv2.rectangle(img, (roi_x, roi_y),
+                          (roi_x + roi_w, roi_y + roi_h), (0, 0, 255), 2)
+            selected_region = [roi_x, roi_y, roi_w, roi_h]
 
-        in_frame_fd = cv2.resize(img, (w, h))
-        # Change data layout from HWC to CHW
-        in_frame_fd = in_frame_fd.transpose((2, 0, 1))
-        in_frame_fd = in_frame_fd.reshape((n, c, h, w))
+            in_frame_fd = cv2.resize(img, (w, h))
+            # Change data layout from HWC to CHW
+            in_frame_fd = in_frame_fd.transpose((2, 0, 1))
+            in_frame_fd = in_frame_fd.reshape((n, c, h, w))
 
-        # Start asynchronous inference for specified request.
-        inf_start = time.time()
-        self.exec_net.start_async(request_id=0, inputs={self.input_blob:in_frame_fd})
-        self.infer_status=self.exec_net.requests[0].wait()
-        det_time = time.time() - inf_start
+            # Start asynchronous inference for specified request.
+            inf_start = time.time()
+            self.exec_net.start_async(request_id=0, inputs={self.input_blob:in_frame_fd})
+            self.infer_status=self.exec_net.requests[0].wait()
+            det_time = time.time() - inf_start
 
-        res = self.exec_net.requests[0].outputs[self.output_blob]
-        # Parse SSD output
-        safe,person=self.ssd_out(res, initial_wh, selected_region)
+            res = self.exec_net.requests[0].outputs[self.output_blob]
+            # Parse SSD output
+            safe,person=self.ssd_out(res, initial_wh, selected_region)
 
-        if person:
-            x,y,x1,y1 = [person[0][i] for i in (0,1,2,3)]
-            p_detect.append(Defect(PERSON_DETECTED, (x, y), (x1, y1)))
+            if person:
+                x,y,x1,y1 = [person[0][i] for i in (0,1,2,3)]
+                p_detect.append(Defect(PERSON_DETECTED, (x, y), (x1, y1)))
 
-        # Draw performance stats
-        inf_time_message = "Inference time: {:.3f} ms".format(det_time * 1000)
-        throughput = "Throughput: {:.3f} fps".format(1000*frame_count/(det_time*1000))
+            # Draw performance stats
+            inf_time_message = "Inference time: {:.3f} ms".format(det_time * 1000)
+            throughput = "Throughput: {:.3f} fps".format(1000*frame_count/(det_time*1000))
 
-        d_info.append(DisplayInfo(inf_time_message, 0))
-        d_info.append(DisplayInfo(throughput, 0))
-        #if not safe display HIGH [priority: 2] alert string
-        if p_detect:
-            warning = "HUMAN IN ASSEMBLY AREA: PAUSE THE MACHINE!"
-            d_info.append(DisplayInfo('Worker Safe: False', 2))
-            d_info.append(DisplayInfo(warning, 2))
-        else:
-            d_info.append(DisplayInfo('Worker Safe: True', 0))
+            d_info.append(DisplayInfo(inf_time_message, 0))
+            d_info.append(DisplayInfo(throughput, 0))
+            #if not safe display HIGH [priority: 2] alert string
+            if p_detect:
+                warning = "HUMAN IN ASSEMBLY AREA: PAUSE THE MACHINE!"
+                d_info.append(DisplayInfo('Worker Safe: False', 2))
+                d_info.append(DisplayInfo(warning, 2))
+            else:
+                d_info.append(DisplayInfo('Worker Safe: True', 0))
 
-        return d_info, p_detect
-```
+            return d_info, p_detect
+    ```
 
 ## Step-3 : Customizing the configuration
 
@@ -287,47 +287,47 @@ In this section we will create a custom JSON  configuration file to integrate th
   ```
   - Copy the below configuration details to **restricted_zone_notifier.json**
 
-  ```JSON
-  {
-    "machine_id": "tool_2",
-    "trigger_threads": 1,
-    "queue_size" : 10,
-    "data_ingestion_manager": {
-        "ingestors": {
-            "video_file": {
-                "video_file": "./test_videos/worker-zone-detection.mp4",
-                "encoding": {
-                    "type": "jpg",
-                    "level": 100
-                },
-                "img_store_type": "inmemory_persistent",
-                "loop_video": true,
-                "poll_interval": 0.2
+    ```JSON
+      {
+        "machine_id": "tool_2",
+        "trigger_threads": 1,
+        "queue_size" : 10,
+        "data_ingestion_manager": {
+            "ingestors": {
+                "video_file": {
+                    "video_file": "./test_videos/worker-zone-detection.mp4",
+                    "encoding": {
+                        "type": "jpg",
+                        "level": 100
+                    },
+                    "img_store_type": "inmemory_persistent",
+                    "loop_video": true,
+                    "poll_interval": 0.2
+                }
             }
-        }
-    },
-    "triggers": {
-        "restricted_zone_notifier_trigger": {
-            "training_mode": false
-        }
-    },
-    "classification": {
-        "max_workers": 1,
-        "classifiers": {
-            "restrictedzonenotifier": {
-                "trigger": [
-                    "restricted_zone_notifier_trigger"
-                ],
-                "config": {
-                    "model_xml": "./algos/algo_config/restricted_zone_notifier/person-detection-retail-0013.xml",
-                    "model_bin": "./algos/algo_config/restricted_zone_notifier/person-detection-retail-0013.bin",
-                    "device": "CPU"
+        },
+        "triggers": {
+            "restricted_zone_notifier_trigger": {
+                "training_mode": false
+            }
+        },
+        "classification": {
+            "max_workers": 1,
+            "classifiers": {
+                "restrictedzonenotifier": {
+                    "trigger": [
+                        "restricted_zone_notifier_trigger"
+                    ],
+                    "config": {
+                        "model_xml": "./algos/algo_config/restricted_zone_notifier/person-detection-retail-0013.xml",
+                        "model_bin": "./algos/algo_config/restricted_zone_notifier/person-detection-retail-0013.bin",
+                        "device": "CPU"
+                    }
                 }
             }
         }
     }
-}
-  ```
+    ```
 
 To integrate the developed restricted zone notifier demo, following files to be updated with restricted_zone_notifier.json file:
 
@@ -338,29 +338,29 @@ To integrate the developed restricted zone notifier demo, following files to be 
 #### Update the environment
 - To complete this, run the following commands in the terminal
 
-  ```bash
-cd  ~/IEdgeinsights/docker_setup
-sudo gedit .env
-  ```
+    ```bash
+    cd  ~/IEdgeinsights/docker_setup
+    sudo gedit .env
+    ```
 - Find and replace the name of the configuration file ```factory_pcbdemo.json ``` with ```restricted_zone_notifier.json``` .
 
 #### Update VideoIngestion module
 - To complete this, run the following commands in the terminal
 
-  ```bash
-cd  ~/IEdgeinsights/VideoIngestion
-sudo gedit VideoIngestion.py
-```
+    ```bash
+    cd  ~/IEdgeinsights/VideoIngestion
+    sudo gedit VideoIngestion.py
+    ```
 - Find and replace the name of the configuration file ```factory_pcbdemo.json ``` with ```restricted_zone_notifier.json``` .
 
 
 #### Update classifier setup
 - To complete this, run the following commands in the terminal
 
-  ```bash
-cd ~/IEdgeinsights/DataAnalytics/PointDataAnalytics
-sudo gedit classifier_setup.py
-```
+    ```bash
+    cd ~/IEdgeinsights/DataAnalytics/PointDataAnalytics
+    sudo gedit classifier_setup.py
+    ```
 - Find and replace the name of the configuration file ```factory_pcbdemo.json ``` with ```restricted_zone_notifier.json``` .
 
 
@@ -371,19 +371,19 @@ For visualizing the results of the video analytics, the a visualizer app is avai
 To customize the visualizer application(visualizer.py) modify the **config .json** file available in  **~/IEdgeinsights/tools/visualizer/** path.
 
 - To complete this task run the following commands to complete this task
-```bash
-cd ~/IEdgeinsights/tools/visualizer
-sudo gedit config.json
-```
+    ```bash
+    cd ~/IEdgeinsights/tools/visualizer
+    sudo gedit config.json
+    ```
 and replace the contents of the config.json with the below configuration details to view the result in a single window
 
-  ```JSON
-{
-  "output_streams": [
-    "stream1_results"
-  ]
-}
-```
+    ```JSON
+    {
+      "output_streams": [
+        "stream1_results"
+      ]
+    }
+    ```
 
 ### Step-5 : Build and Run the Application
 Run the following commands to build and run the customized restricted zone notifier apllication using EIS.
@@ -391,31 +391,31 @@ Run the following commands to build and run the customized restricted zone notif
 #### Generate certificates:
 - Run the following commands
 
-  ```bash
-cd ~/IEdgeinsights/cert-tool
-python3 main.py
-```
+    ```bash
+    cd ~/IEdgeinsights/cert-tool
+    python3 main.py
+    ```
 
 #### Provision the secrets to Vault:
 This will take the inputs from [docker_setup/config/provision_config.json](docker_setup/config/provision_config.json) & read the cert-tool generated Certificates and save it securely by storing it in the Hashicorp Vault.
 - Run the following commands
 
-  ```bash
-cd ~/IEdgeinsights/docker_setup/
-sudo make provision CERT_PATH=../cert-tool/Certificates/
-sudo make install CERT_PATH=../cert-tool/Certificates/
-  ```
+    ```bash
+    cd ~/IEdgeinsights/docker_setup/
+    sudo make provision CERT_PATH=../cert-tool/Certificates/
+    sudo make install CERT_PATH=../cert-tool/Certificates/
+    ```
 
 #### IEI visualizer setup
 
 - Run the following commands to run the customized restricted zone notifier apllication using EIS.
 
-  ```bash
-sudo make distlibs
-cd ~/IEdgeinsights/tools/visualizer
-sudo make build
-sudo make run CERT_PATH=~/IEdgeinsights/cert-tool/Certificates/ HOST=localhost IMAGE_DIR=/opt/intel/iei/saved_images DISPLAY_IMG=true
-  ```
+    ```bash
+    sudo make distlibs
+    cd ~/IEdgeinsights/tools/visualizer
+    sudo make build
+    sudo make run CERT_PATH=~/IEdgeinsights/cert-tool/Certificates/ HOST=localhost IMAGE_DIR=/opt/intel/iei/saved_images DISPLAY_IMG=true
+    ```
 
  On successful execution, the application sends a warning message when a person is detected in the restricted zone. The output looks like below screenshot.
 
@@ -429,10 +429,10 @@ The Restricted zone notifier application can be run on different hardwares by cu
 ### Run application with CPU first
 - To Run on CPU, execute the following commands:
 
-  ```bash
-cd ~/IEdgeinsights/docker_setup/config/alog_config/
-sudo gedit restricted_zone_notifier.json
-  ```
+    ```bash
+    cd ~/IEdgeinsights/docker_setup/config/alog_config/
+    sudo gedit restricted_zone_notifier.json
+    ```
 - Change the device to CPU ```device=CPU``` inside JSON file
 - Repeat the **Step-5** to build and run the application and observe the performance.
 
@@ -449,24 +449,24 @@ The Myriad™ Inference Engine plugin supports VPU devices such as the Intel® N
 - To run on an Intel® Myriad VPU, change from ```"device":GPU``` to ```"device":MYRIAD```.
 
 - VPU devices only support FP16 data type. So we need to use the FP16 variant of our pre-trained person detection model. The pre-trained models are available in the following path.
-  ```
-  ~/IEdgeinsights/docker_setup/config/alog_config/restricted_zone_notifier  
-  ```
+    ```
+    ~/IEdgeinsights/docker_setup/config/alog_config/restricted_zone_notifier  
+    ```
 - To complete this steps, replace the following lines of code:
 
-  ```JSON
-"model_xml": "./algos/algo_config/restricted_zone_notifier/person-detection-retail-0013.xml",
-"model_bin": "./algos/algo_config/restricted_zone_notifier/person-detection-retail-0013.bin",
-"device": "GPU"
-```
+    ```JSON
+    "model_xml": "./algos/algo_config/restricted_zone_notifier/person-detection-retail-0013.xml",
+    "model_bin": "./algos/algo_config/restricted_zone_notifier/person-detection-retail-0013.bin",
+    "device": "GPU"
+    ```
 
 - with below lines of codes in **restricted_zone_notifier.json** file.
 
-  ```JSON
-"model_xml": "./algos/algo_config/restricted_zone_notifier/person-detection-retail-0013-fp16.xml",
-"model_bin": "./algos/algo_config/restricted_zone_notifier/person-detection-retail-0013-fp16.bin",
-"device": "MYRIAD"
-```
+    ```JSON
+    "model_xml": "./algos/algo_config/restricted_zone_notifier/person-detection-retail-0013-fp16.xml",
+    "model_bin": "./algos/algo_config/restricted_zone_notifier/person-detection-retail-0013-fp16.bin",
+    "device": "MYRIAD"
+    ```
 - Repeat the **Step-5** to build and run the application and observe the performance.
 
 ### Lesson Learnt
