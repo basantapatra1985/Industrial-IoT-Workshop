@@ -38,7 +38,7 @@ In Python based RI, input is provided using command line . Whereas in EIS framew
 The porting has to be done as below:
 ![](images/rzn_trigger.png)
 
-### 3. Execute SSD model and parse results
+### 4. Execute SSD model and parse results
 
 This part of the sub-module needs to be done just after the inferencing results. So it can be included in the classifier `__init__.py` is available in IEdgeInsights/algos/dpm/classification
 
