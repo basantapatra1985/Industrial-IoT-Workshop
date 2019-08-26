@@ -7,7 +7,7 @@ First part of Lab is to explore about the Intel® Edge Insights(IEI) Software an
 
 * **Explore Intel® Edge Insights Software**
     <!--- Slide Deck --->
-    - Lab - [Explore Intel® Edge Insights Software](./Explore_IEdgeInsights.md)
+    - Lab - [Explore Intel® Edge Insights Software](./explore_IEdgeInsights.md)
 
 
 * **Deploy Restricted Zone Notifier using IEI Software**
