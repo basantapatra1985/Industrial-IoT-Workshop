@@ -15,6 +15,9 @@ First, let us have a look on the below code flow for restricted zone notifier.
 
 In Python based RI, input is provided using command line . Whereas in EIS framework, a JSON file is provided where an user provide the inputs for inferencing. The JSON files are available in **IEdgeInsights/docker_setup/config/algo_config** directory.
 ![](images/rzn_input_1.png)
+
+![](images/arrow.png)
+
 ![](images/rzn_input_2.png)
 
 
