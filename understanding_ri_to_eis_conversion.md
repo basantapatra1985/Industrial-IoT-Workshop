@@ -15,9 +15,7 @@ First, let us have a look on the below code flow for restricted zone notifier.
 
 In Python based RI, input is provided using command line . Whereas in EIS framework, a JSON file is provided where an user provide the inputs for inferencing. The JSON files are available in **IEdgeInsights/docker_setup/config/algo_config** directory.
 ![](images/rzn_input_1.png)
-
 ![](images/arrow.png)
-
 ![](images/rzn_input_2.png)
 
 
@@ -29,7 +27,9 @@ In Python based RI, input is provided using command line . Whereas in EIS framew
 
   `__init__`  : This method is used for initialization and loading IR to the plugin for target device.  
   `classify` : To do the inferencing and capturing the inference output, this method can be used.
-![](images/rzn_initialization.png)
+![](images/rzn_initialization_1.png)
+![](images/arrow.png)
+![](images/rzn_initialization_2.png)
 
 ### 3. Capture frames from input file
 - In python based RI, the  frames captured from image/video using cv2.Videocapture and frames used for further processing during inferencing.
@@ -40,20 +40,26 @@ In Python based RI, input is provided using command line . Whereas in EIS framew
 - Once processed video frames as they are received and call the callback registered by the register_trigger_callback() method if the frame should trigger the execution of the classifier
 
 The porting has to be done as below:
-![](images/rzn_trigger.png)
+![](images/rzn_trigger_1.png)
+![](images/arrow.png)
+![](images/rzn_trigger_2.png)
 
 ### 4. Execute SSD model and parse results
 
 This part of the sub-module needs to be done just after the inferencing results. So it can be included in the classifier `__init__.py` is available in IEdgeInsights/algos/dpm/classification
 
 The porting has to be done as below:
-![](images/rzn_ssd_out.png)
+![](images/rzn_ssd_out_1.png)
+![](images/arrow.png)
+![](images/rzn_ssd_out_2.png)
 
 ### 5. Update Status and Alert information
 - The status and alert information is also included in classifier `__init__.py` is available in IEdgeInsights/algos/dpm/classification/classifiers directory.
 classify() returns display and defect information.
 
-![](images/rzn_output.png)
+![](images/rzn_output_1.png)
+![](images/arrow.png)
+![](images/rzn_output_2.png)
 
 ### 6. Messaging Thread
 In Python based RI Worker thread (Messaging Thread) that publishes MQTT messages to Server to display the output.
