@@ -49,6 +49,7 @@ The porting has to be done as below:
 This part of the sub-module needs to be done just after the inferencing results. So it can be included in the classifier `__init__.py` is available in IEdgeInsights/algos/dpm/classification
 
 The porting has to be done as below:
+
 ![](images/rzn_ssd_out_1.png)
 ![](images/arrow.png)
 ![](images/rzn_ssd_out_2.png)
